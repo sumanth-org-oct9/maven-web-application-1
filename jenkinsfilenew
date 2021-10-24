@@ -1,0 +1,36 @@
+node
+{
+ 
+properties([buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '5', daysToKeepStr: '', numToKeepStr: '5')), pipelineTriggers([pollSCM('* * * * *')])])
+
+ def mavenHome = tool name: "maven-3.8.3" 
+
+stage('CheckoutCode')
+ {
+ git branch: 'development', credentialsId: '72ff5a68-735d-4dea-933f-6d7bcd1f19eb', url: 'https://github.com/sumanth-org-oct9/maven-web-application-1.git'
+ }
+ 
+ stage('Build')
+ {
+ sh "${mavenHome}/bin/mvn clean package"
+ }
+
+ stage('ExecuteSonarQubeReport')
+ {
+ sh "${mavenHome}/bin/mvn sonar:sonar"
+ }
+ 
+ 
+  stage('DeployAppintoTomcatServer')
+ {
+ sshagent(['5c288509-2f50-4276-8255-d930fc8fa6dd']) 
+
+ {
+ sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@13.233.28.179:/opt/apache-tomcat-9.0.54/webapps/"
+ }
+ }
+
+ 
+
+
+}
